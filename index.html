@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PNW Market Maps</title>
+<style>
+  :root{
+    --bg:#f6f4ee; --ink:#252a23; --muted:#6b7263; --line:#ddd8cb;
+    --card:#fdfcf9; --accent:#33604a; --accent-ink:#f2efe6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1c201b; --ink:#e8e6dd; --muted:#9aa190; --line:#3a4036;
+           --card:#242922; --accent:#6fae8f; --accent-ink:#161a15; }
+  }
+  *{box-sizing:border-box; margin:0}
+  body{background:var(--bg); color:var(--ink);
+    font:16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display:flex; justify-content:center; padding:9vh 20px 40px}
+  main{max-width:620px; width:100%}
+  h1{font-size:26px; letter-spacing:-.015em; text-wrap:balance}
+  .sub{color:var(--muted); margin:8px 0 34px}
+  a.card{display:block; background:var(--card); border:1px solid var(--line);
+    border-radius:8px; padding:18px 20px; margin-bottom:14px;
+    text-decoration:none; color:inherit; transition:border-color .15s}
+  a.card:hover, a.card:focus-visible{border-color:var(--accent); outline:none}
+  a.card h2{font-size:17px; margin-bottom:4px}
+  a.card h2::after{content:" \2197"; color:var(--accent)}
+  a.card p{color:var(--muted); font-size:14px}
+  footer{margin-top:38px; color:var(--muted); font-size:12.5px;
+    border-top:1px solid var(--line); padding-top:14px}
+</style>
+</head>
+<body>
+<main>
+  <h1>PNW Market Maps</h1>
+  <p class="sub">Interactive views of the upper-Kittitas recreational property market,
+  built from public county records and listing feeds.</p>
+
+  <a class="card" href="suncadia-explorer.html">
+    <h2>Suncadia Time Explorer</h2>
+    <p>13,500 parcels around Suncadia, Roslyn, and Cle Elum with a time scrubber
+    from 2004 to today &mdash; watch divisions open, homes get built, and sales pulse
+    through the resort. REET transaction history back to 2012 in every popup.</p>
+  </a>
+
+  <a class="card" href="listing-explorer.html">
+    <h2>Listing Explorer</h2>
+    <p>Active land and home listings across seven Washington counties, with
+    price/type/days-on-market filters and drive-time estimates from any point
+    you choose.</p>
+  </a>
+
+  <footer>
+    Sources: county assessor &amp; treasurer records (public), Redfin/LandWatch
+    listing feeds. Rebuilt periodically &mdash; freshness noted in each page's header.
+  </footer>
+</main>
+</body>
+</html>
