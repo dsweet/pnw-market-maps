@@ -110,6 +110,7 @@ section.bin{margin-bottom:10px}
 .badge{font-size:10px; font-weight:700; letter-spacing:.03em;
   border:1px solid var(--line); border-radius:4px; padding:0 4px;
   color:var(--muted)}
+.badge.sc{color:var(--accent); border-color:var(--accent)}
 .cut{color:var(--good); font-weight:600; font-size:12px}
 .cut s{color:var(--muted); font-weight:400}
 .rel{color:var(--warn); font-weight:600; font-size:11px}
@@ -151,6 +152,7 @@ footer a{color:var(--accent)}
   <div class="bar">
     <label for="sort" style="color:var(--muted)">Sort</label>
     <select id="sort">
+      <option value="sc" selected>Score</option>
       <option value="new">Newest</option>
       <option value="pd">Price ↓</option>
       <option value="pa">Price ↑</option>
@@ -183,7 +185,7 @@ footer a{color:var(--accent)}
 </footer>
 <script>
 "use strict";
-const BUILT = "2026-07-28T13:42:05+00:00";
+const BUILT = "2026-07-29T13:42:10+00:00";
 const PREFIX = {r:"https://www.redfin.com", l:"https://www.landwatch.com"};
 const SRCLAB = {r:"R", l:"LW"};
 const TIERS = [["c","Candidate"],["a","Adjacent"],["p","Personal"]];
@@ -199,11 +201,11 @@ const LS_DAY = "lwdash.lastSeenDay", LS_VISIT = "lwdash.lastVisit";
 
 // row indices — keep in sync with the builder
 const SRC=0, URLP=1, CTY=2, TIER=3, ADDR=4, CITY=5, TAB=6, CAT=7,
-      ACRES=8, SQFT=9, BEDS=10, PRICE=11, LISTED=12;
+      ACRES=8, SQFT=9, BEDS=10, PRICE=11, LISTED=12, SCORE=13;
 
 let DAILY = null, ACTIVE = null, activeLoading = false;
 const state = {
-  view: "foryou", stream: "new", tab: "h", sort: "new",
+  view: "foryou", stream: "new", tab: "h", sort: "sc",
   tiers: new Set(["c","a","p"]), counties: new Set(Object.keys(COUNTY)),
   pmin: null, pmax: null,
   open: new Set(),   // expanded bins (all-active view)
@@ -303,6 +305,16 @@ function sortRows(rows) {
       (b[0][PRICE] || 0) - (a[0][PRICE] || 0));
     return rows;
   }
+  if (key === "sc") {  // score desc, unscored last, then price desc
+    rows.sort((a, b) => {
+      const sa = a[0][SCORE], sb = b[0][SCORE];
+      if (sa == null && sb == null) return (b[0][PRICE] || 0) - (a[0][PRICE] || 0);
+      if (sa == null) return 1;
+      if (sb == null) return -1;
+      return (sb - sa) || (b[0][PRICE] || 0) - (a[0][PRICE] || 0);
+    });
+    return rows;
+  }
   const dir = key === "pd" ? -1 : 1;
   rows.sort((a, b) => {
     const va = val(a), vb = val(b);
@@ -334,14 +346,15 @@ function rowHTML(rd) {
     if (r[ACRES] && r[ACRES] >= 0.5) bits.push(fmtAcres(r[ACRES]));
   }
   let chip = "";
-  if (state.view !== "all" && state.stream === "cuts" && r.length > 14) {
-    const [old, nw] = [r[13], r[14]];
+  if (state.view !== "all" && state.stream === "cuts" && r.length > 15) {
+    const [old, nw] = [r[14], r[15]];
     const pct = old > 0 ? Math.round((old - nw) / old * 1000) / 10 : null;
     chip = ` <span class="cut">↓${pct != null ? " " + pct + "%" : ""} <s>${fmtPrice(old)}</s></span>`;
-  } else if (state.view !== "all" && state.stream === "new" && r[13]) {
+  } else if (state.view !== "all" && state.stream === "new" && r[14]) {
     chip = ` <span class="rel">relisted</span>`;
   }
   const badges =
+    (r[SCORE] != null ? `<span class="badge sc">${r[SCORE]}</span> ` : "") +
     `<span class="badge">${SRCLAB[r[SRC]] || "?"}</span>` +
     (CATLAB[r[CAT]] ? ` <span class="badge">${CATLAB[r[CAT]]}</span>` : "");
   const daytag = day && feedSpansDays ? `<span class="daytag">${fmtDay(day)}</span>` : "";
@@ -485,7 +498,7 @@ function setView(v) {
   state.view = v;
   state.open = new Set();
   state.full = new Set();
-  if (v === "all" && state.sort === "new") state.sort = "pd";
+  if (v === "all" && state.sort === "new") state.sort = "sc";
   document.getElementById("sort").value = state.sort;
   render();
 }
