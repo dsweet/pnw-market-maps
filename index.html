@@ -99,8 +99,22 @@ section.bin{margin-bottom:10px}
 .bin.open .tri{transform:rotate(90deg)}
 
 .row{display:block; background:var(--card); border:1px solid var(--line);
-  border-radius:8px; padding:8px 11px; margin:7px 0; text-decoration:none}
+  border-radius:8px; padding:8px 11px; margin:7px 0}
 .row:active{border-color:var(--accent)}
+.rmain{display:flex; align-items:stretch}
+.rlink{flex:1; min-width:0; display:block; text-decoration:none; color:inherit}
+.xbtn{border:0; background:none; color:var(--muted); font-size:10px;
+  padding:0 2px 0 12px; cursor:pointer; transition:transform .12s}
+.xbtn.on{transform:rotate(90deg); color:var(--accent)}
+.xp{border-top:1px solid var(--line); margin-top:8px; padding-top:8px}
+.drv{display:grid; grid-template-columns:1fr 1fr; gap:3px 18px}
+.drv .d{display:flex; justify-content:space-between; gap:8px; font-size:12.5px;
+  color:var(--muted)}
+.drv b.up{color:var(--good); font-variant-numeric:tabular-nums}
+.drv b.dn{color:var(--crit); font-variant-numeric:tabular-nums}
+.xnote{font-size:11px; color:var(--muted); margin-top:6px}
+.fbk{font-size:12.5px; margin-top:6px}
+.fbk a{color:var(--accent)}
 .l1{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
 .l1 .price{font-weight:700; font-variant-numeric:tabular-nums}
 .l1 .addr{font-size:14px; overflow:hidden; text-overflow:ellipsis;
@@ -185,7 +199,7 @@ footer a{color:var(--accent)}
 </footer>
 <script>
 "use strict";
-const BUILT = "2026-07-31T13:42:16+00:00";
+const BUILT = "2026-07-31T18:30:18+00:00";
 const PREFIX = {r:"https://www.redfin.com", l:"https://www.landwatch.com"};
 const SRCLAB = {r:"R", l:"LW"};
 const TIERS = [["c","Candidate"],["a","Adjacent"],["p","Personal"]];
@@ -198,10 +212,17 @@ const BINS = [
   [2.5e5, 5e5, "$250–500k"], [1e5, 2.5e5, "$100–250k"], [0, 1e5, "<$100k"]];
 const CATLAB = {m:"MFG", c:"CONDO"};
 const LS_DAY = "lwdash.lastSeenDay", LS_VISIT = "lwdash.lastVisit";
+// driver codes — keep in sync with DIM_CODE/PEN_CODE in the builder
+const DRVLAB = {v:"Value", a:"Access", p:"Phase", c:"Scarcity",
+  t:"Mkt strength", h:"Deal heat", m:"Amenities", q:"Specs",
+  H:"HOA fee", W:"Highway", S:"Seasonal access", O:"Off-grid"};
+// feedback service on the mini (LAN name at home, Tailscale IP elsewhere)
+const FEEDBACK_HOSTS = [["home", "http://claws-mac-mini.local:8787"],
+                        ["tailscale", "http://100.124.16.84:8787"]];
 
 // row indices — keep in sync with the builder
 const SRC=0, URLP=1, CTY=2, TIER=3, ADDR=4, CITY=5, TAB=6, CAT=7,
-      ACRES=8, SQFT=9, BEDS=10, PRICE=11, LISTED=12, SCORE=13;
+      ACRES=8, SQFT=9, BEDS=10, PRICE=11, LISTED=12, SCORE=13, DRV=14;
 
 let DAILY = null, ACTIVE = null, activeLoading = false;
 const state = {
@@ -210,6 +231,7 @@ const state = {
   pmin: null, pmax: null,
   open: new Set(),   // expanded bins (all-active view)
   full: new Set(),   // bins with the >200 cap lifted
+  exp: new Set(),    // unfolded listing cards (src+urlPath keys)
   lastSeen: null, fallback: false,
 };
 
@@ -346,11 +368,11 @@ function rowHTML(rd) {
     if (r[ACRES] && r[ACRES] >= 0.5) bits.push(fmtAcres(r[ACRES]));
   }
   let chip = "";
-  if (state.view !== "all" && state.stream === "cuts" && r.length > 15) {
-    const [old, nw] = [r[14], r[15]];
+  if (state.view !== "all" && state.stream === "cuts" && r.length > 16) {
+    const [old, nw] = [r[15], r[16]];
     const pct = old > 0 ? Math.round((old - nw) / old * 1000) / 10 : null;
     chip = ` <span class="cut">↓${pct != null ? " " + pct + "%" : ""} <s>${fmtPrice(old)}</s></span>`;
-  } else if (state.view !== "all" && state.stream === "new" && r[14]) {
+  } else if (state.view !== "all" && state.stream === "new" && r[15]) {
     chip = ` <span class="rel">relisted</span>`;
   }
   const badges =
@@ -359,9 +381,35 @@ function rowHTML(rd) {
     (CATLAB[r[CAT]] ? ` <span class="badge">${CATLAB[r[CAT]]}</span>` : "");
   const daytag = day && feedSpansDays ? `<span class="daytag">${fmtDay(day)}</span>` : "";
   const title = esc(r[ADDR]) || esc(r[CITY]) || (COUNTY[r[CTY]] || esc(r[CTY]));
-  return `<a class="row${gone ? " gone" : ""}" href="${esc(url)}" target="_blank" rel="noopener">
+  const key = r[SRC] + r[URLP];
+  const open = state.exp.has(key);
+  return `<div class="row${gone ? " gone" : ""}">
+    <div class="rmain"><a class="rlink" href="${esc(url)}" target="_blank" rel="noopener">
     <div class="l1"><span class="price">${fmtPrice(r[PRICE])}</span>${chip}<span class="addr">${title}</span></div>
-    <div class="l2">${bits.join(" · ")} ${badges} ${daytag}</div></a>`;
+    <div class="l2">${bits.join(" · ")} ${badges} ${daytag}</div></a>
+    <button class="xbtn${open ? " on" : ""}" data-xp="${esc(key)}" aria-label="score details">▶</button></div>
+    ${open ? xpHTML(r, url) : ""}</div>`;
+}
+
+// unfolded card body: top-5 score drivers + feedback links to the mini
+function xpHTML(r, url) {
+  let top;
+  if (r[DRV] && r[DRV].length) {
+    top = `<div class="drv">` + r[DRV].map(d =>
+      `<div class="d"><span>${DRVLAB[d[0]] || d[0]}${
+        "HWSO".includes(d[0]) ? "" : " " + d[1]}</span><b class="${
+        d[2] >= 0 ? "up" : "dn"}">${d[2] >= 0 ? "+" : "−"}${Math.abs(d[2])}</b></div>`).join("") +
+      `</div><div class="xnote">top drivers · score ${r[SCORE]} · points of pull vs a neutral 50</div>`;
+  } else {
+    top = `<div class="xnote">No score breakdown for this listing (unscored tier, inactive, or too little data).</div>`;
+  }
+  const q = `src=${r[SRC]}&county=${encodeURIComponent(r[CTY])}` +
+    `&score=${r[SCORE] == null ? "" : r[SCORE]}` +
+    `&addr=${encodeURIComponent(r[ADDR] || r[CITY] || "")}` +
+    `&url=${encodeURIComponent(url)}`;
+  const links = FEEDBACK_HOSTS.map(h =>
+    `<a href="${h[1]}/fb?${q}" target="_blank" rel="noopener">${h[0]}</a>`).join(" · ");
+  return `<div class="xp">${top}<div class="fbk">✍️ Feedback: ${links}</div></div>`;
 }
 
 let feedSpansDays = false;
@@ -479,6 +527,11 @@ function render() {
   });
   content.querySelectorAll("[data-more]").forEach(b => b.onclick = () => {
     state.full.add(+b.dataset.more);
+    render();
+  });
+  content.querySelectorAll("[data-xp]").forEach(b => b.onclick = () => {
+    const k = b.dataset.xp;
+    state.exp.has(k) ? state.exp.delete(k) : state.exp.add(k);
     render();
   });
   markSeen();
