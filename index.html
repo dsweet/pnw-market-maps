@@ -199,7 +199,7 @@ footer a{color:var(--accent)}
 </footer>
 <script>
 "use strict";
-const BUILT = "2026-10-09T13:42:14+00:00";
+const BUILT = "2026-10-10T13:42:11+00:00";
 const PREFIX = {r:"https://www.redfin.com", l:"https://www.landwatch.com"};
 const SRCLAB = {r:"R", l:"LW"};
 const TIERS = [["c","Candidate"],["a","Adjacent"],["p","Personal"]];
@@ -213,8 +213,7 @@ const BINS = [
 const CATLAB = {m:"MFG", c:"CONDO"};
 const LS_DAY = "lwdash.lastSeenDay", LS_VISIT = "lwdash.lastVisit";
 // driver codes — keep in sync with DIM_CODE/PEN_CODE in the builder
-const DRVLAB = {v:"Value", a:"Access", p:"Phase", c:"Scarcity",
-  t:"Mkt strength", h:"Deal heat", m:"Amenities", q:"Specs",
+const DRVLAB = {$:"Price rank", c:"Scarcity", r:"Lot size",
   H:"HOA fee", W:"Highway", S:"Seasonal access", O:"Off-grid"};
 // feedback service on the mini (LAN name at home, Tailscale IP elsewhere)
 const FEEDBACK_HOSTS = [["home", "http://claws-mac-mini.local:8787"],
